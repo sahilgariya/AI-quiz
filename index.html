@@ -1,0 +1,481 @@
+
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Quiz</title>
+  <style>
+    :root{
+      --bg:#0b0f17;          /* deep navy */
+      --card:#111827;        /* slate */
+      --muted:#94a3b8;       /* slate-400 */
+      --text:#e5e7eb;        /* gray-200 */
+      --accent:#22d3ee;      /* cyan-400 */
+      --accent-2:#a78bfa;    /* violet-400 */
+      --danger:#f87171;      /* red-400 */
+      --success:#34d399;     /* green-400 */
+      --border:#1f2937;      /* slate-800 */
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, "Noto Sans", sans-serif;
+      background: radial-gradient(1000px 600px at 10% -10%, rgba(34,211,238,.08), transparent),
+                  radial-gradient(900px 500px at 110% 10%, rgba(167,139,250,.08), transparent),
+                  var(--bg);
+      color:var(--text);
+      display:flex; align-items:center; justify-content:center;
+      padding:24px;
+    }
+    .app{width:100%; max-width:900px}
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin-bottom:18px;
+    }
+    .logo{
+      display:flex; align-items:center; gap:12px;
+      font-weight:800; letter-spacing:.5px; font-size:20px;
+    }
+    .logo .dot{width:10px; height:10px; border-radius:999px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:0 0 18px rgba(34,211,238,.55)}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.00)); border:1px solid var(--border); border-radius:20px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .row{display:flex; gap:16px; flex-wrap:wrap}
+    .grow{flex:1 1 280px}.muted{color:var(--muted)}
+.accent{color:var(--accent)}
+
+.btn{appearance:none; border:none; cursor:pointer; border-radius:14px; padding:12px 16px; font-weight:700; color:#0b1020; background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:0 8px 18px rgba(34,211,238,.25); transition:transform .05s ease, filter .2s}
+.btn:hover{filter:brightness(1.05)}
+.btn:active{transform:translateY(1px)}
+
+.btn-ghost{background:transparent; color:var(--text); border:1px solid var(--border); box-shadow:none}
+
+.progress{height:10px; width:100%; background:#0f172a; border-radius:999px; overflow:hidden; border:1px solid var(--border)}
+.progress > div{height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent-2)); transition:width .35s ease}
+
+.split{
+  display:grid; grid-template-columns: 1.2fr .8fr; gap:16px;
+}
+@media (max-width: 860px){ .split{ grid-template-columns: 1fr; } }
+
+.qbox{display:flex; gap:12px; align-items:flex-start}
+.qno{flex:0 0 auto; width:36px; height:36px; display:grid; place-items:center; background:#0f172a; border:1px solid var(--border); border-radius:10px; font-weight:800; color:var(--accent)}
+.question{font-size:20px; font-weight:700; letter-spacing:.2px}
+
+.options{display:grid; gap:12px; margin-top:14px}
+.opt{border:1px solid var(--border); border-radius:14px; padding:12px 14px; background:#0f172a; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:12px; transition:border .15s ease, background .15s ease}
+.opt:hover{border-color:#223049}
+.opt[aria-selected="true"]{outline:2px solid var(--accent); background:#0f1b2f}
+.opt.correct{border-color:rgba(52,211,153,.8)}
+.opt.wrong{border-color:rgba(248,113,113,.8)}
+
+.meta{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:10px 0 0}
+.pill{border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-size:12px; color:var(--muted)}
+
+.timer{font-variant-numeric:tabular-nums; font-weight:800}
+
+.aside{background:linear-gradient(180deg, rgba(34,211,238,.06), rgba(167,139,250,.06)); border:1px dashed #223049}
+.stat{display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center}
+.stat .big{font-size:36px; font-weight:800}
+
+.hidden{display:none !important}
+.small{font-size:12px}
+.spacer{height:8px}
+.center{text-align:center}
+
+.kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#0b1222; border:1px solid var(--border); border-radius:8px; padding:2px 6px;}
+
+footer{margin-top:16px; text-align:center; color:var(--muted); font-size:12px}
+a{color:var(--accent)}
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo"><span class="dot"></span> AI Quiz</div>
+      <div class="row">
+        <button id="btn-reset" class="btn-ghost">Reset</button>
+        <button id="btn-theme" class="btn-ghost" title="Toggle contrast">Theme</button>
+      </div>
+    </header><!-- START CARD -->
+<section id="start" class="card">
+  <h2 style="margin:0 0 8px">Online AI Quiz</h2>
+  <p class="muted" style="margin:0 0 16px">Test your knowledge of Artificial Intelligence, Machine Learning, and Neural Networks. You have <b><span id="timePerQ">20</span>s</b> per question. Good luck!</p>
+  <div class="row" style="align-items:center">
+    <div class="grow">
+      <label class="small muted" for="count">Number of questions</label>
+      <input id="count" type="range" min="5" max="20" value="10" step="1" style="width:100%">
+      <div class="meta"><span class="pill">Selected: <b id="countVal">10</b></span>
+        <label class="pill" style="display:flex; align-items:center; gap:8px">
+          <input id="shuffle" type="checkbox" checked>
+          Shuffle
+        </label>
+      </div>
+    </div>
+    <div>
+      <label class="small muted" for="seconds">Seconds/question</label>
+      <div class="row">
+        <input id="seconds" type="number" min="10" max="60" value="20" style="width:100px; background:#0f172a; border:1px solid var(--border); color:var(--text); border-radius:12px; padding:10px">
+        <button id="btn-start" class="btn">Start Quiz</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="spacer"></div>
+
+<!-- QUIZ LAYOUT -->
+<section id="quiz" class="split hidden">
+  <div class="card">
+    <div class="meta">
+      <div class="pill">Question <b id="qIndex">1</b>/<b id="qTotal">10</b></div>
+      <div class="pill timer">⏱ <span id="time">20</span>s</div>
+    </div>
+    <div class="progress" style="margin:10px 0 14px"><div id="bar"></div></div>
+
+    <div class="qbox">
+      <div class="qno" id="qBadge">Q1</div>
+      <div>
+        <div class="question" id="qText">…</div>
+        <div class="options" id="opts"></div>
+      </div>
+    </div>
+
+    <div class="meta">
+      <button id="btn-prev" class="btn-ghost">← Prev</button>
+      <div class="row">
+        <button id="btn-skip" class="btn-ghost">Skip</button>
+        <button id="btn-next" class="btn">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <aside class="card aside">
+    <h3 style="margin-top:0">Live Stats</h3>
+    <div class="stat">
+      <div>Score</div> <div class="big" id="score">0</div>
+      <div>Correct</div> <div id="correct">0</div>
+      <div>Wrong</div> <div id="wrong">0</div>
+      <div>Skipped</div> <div id="skipped">0</div>
+    </div>
+    <hr style="border:0; border-top:1px solid var(--border); margin:14px 0">
+    <div class="small muted">Tip: Use <span class="kbd">1</span>/<span class="kbd">2</span>/<span class="kbd">3</span>/<span class="kbd">4</span> keys to answer faster. <span class="kbd">N</span> for Next, <span class="kbd">S</span> for Skip.</div>
+  </aside>
+</section>
+
+<div class="spacer"></div>
+
+<!-- RESULT -->
+<section id="result" class="card hidden center">
+  <h2 style="margin:0 0 8px">Your Result</h2>
+  <p class="muted" id="summary">…</p>
+  <div class="row center" style="justify-content:center">
+    <button id="btn-review" class="btn-ghost">Review Answers</button>
+    <button id="btn-restart" class="btn">Play Again</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="small muted">Best score on this device: <b id="best">0</b></div>
+</section>
+
+<!-- REVIEW -->
+<section id="review" class="card hidden">
+  <h3 style="margin-top:0">Answer Review</h3>
+  <div id="reviewList" class="options"></div>
+  <div class="meta">
+    <span></span>
+    <button id="btn-close-review" class="btn-ghost">Close Review</button>
+  </div>
+</section>
+
+<footer>© <span id="year"></span> AI Quiz • Built with HTML/CSS/JS</footer>
+
+  </div>  <script>
+    // ====== Question Bank (AI topics) ======
+    // Each item: { q: string, options: [a,b,c,d], answer: index(0-3), explain?: string }
+    const BANK = [
+      { q: "Who is widely considered the father of Artificial Intelligence?", options: ["Geoffrey Hinton", "John McCarthy", "Alan Turing", "Marvin Minsky"], answer: 1, explain: "John McCarthy coined the term 'Artificial Intelligence' in 1956 and organized the Dartmouth Conference." },
+      { q: "What does 'ML' stand for in AI?", options: ["Meta Learning", "Machine Learning", "Model Logic", "Matrix Learning"], answer: 1 },
+      { q: "Which algorithm is commonly used for classification?", options: ["K-Means", "Linear Regression", "Random Forest", "PCA"], answer: 2, explain: "Random Forest is an ensemble of decision trees effective for classification and regression." },
+      { q: "A perceptron is the basic unit of which model?", options: ["Decision Tree", "Neural Network", "Bayesian Network", "Genetic Algorithm"], answer: 1 },
+      { q: "Activation functions introduce what into neural networks?", options: ["Linearity", "Non-linearity", "Overfitting", "Normalization"], answer: 1 },
+      { q: "Backpropagation primarily updates which parameters?", options: ["Inputs", "Outputs", "Weights & Biases", "Batch Size"], answer: 2 },
+      { q: "Which of these is NOT a supervised learning task?", options: ["Classification", "Regression", "Clustering", "Spam Detection"], answer: 2 },
+      { q: "Overfitting happens when a model…", options: ["Performs well on training but poorly on new data", "Performs poorly on both", "Performs well on all data", "Has too few parameters"], answer: 0 },
+      { q: "What does NLP stand for?", options: ["Neural Language Processing", "Natural Language Processing", "Nonlinear Programming", "Network Language Protocol"], answer: 1 },
+      { q: "Which metric is commonly used for classification evaluation?", options: ["MAE", "MSE", "Accuracy", "Silhouette Score"], answer: 2 },
+      { q: "Gradient Descent aims to…", options: ["Maximize the loss", "Minimize the loss", "Normalize inputs", "Increase learning rate"], answer: 1 },
+      { q: "Which of these is a generative model?", options: ["Logistic Regression", "Support Vector Machine", "GAN", "KNN"], answer: 2 },
+      { q: "What does 'ReLU' stand for?", options: ["Rectified Linear Unit", "Reduced Loss Unit", "Random Linear Update", "Relative Log Unit"], answer: 0 },
+      { q: "The 'attention' mechanism is central to…", options: ["Decision Trees", "Transformers", "K-Means", "Naive Bayes"], answer: 1 },
+      { q: "In classification, 'precision' measures…", options: ["How many predicted positives are correct", "How many actual positives are found", "Average error magnitude", "Clustering tightness"], answer: 0 },
+      { q: "What is the purpose of a validation set?", options: ["Train the model", "Tune hyperparameters", "Final evaluation", "Label new data"], answer: 1 },
+      { q: "Which is an example of unsupervised learning?", options: ["Spam filtering", "Image clustering", "House price prediction", "Sentiment analysis"], answer: 1 },
+      { q: "'Zero-shot' learning means…", options: ["Training with zero data", "Generalizing to unseen classes without specific examples", "Model with zero parameters", "No training time"], answer: 1 },
+      { q: "Which loss is typical for binary classification?", options: ["Cross-Entropy", "Huber", "MSE", "Triplet"], answer: 0 },
+      { q: "Dropout in neural networks is used to…", options: ["Speed up inference", "Prevent overfitting", "Increase dataset size", "Quantize weights"], answer: 1 },
+    ];
+
+    // ====== State ======
+    let state = {
+      order: [],
+      i: 0,
+      picked: {}, // index -> chosen option
+      correct: 0, wrong: 0, skipped: 0,
+      secondsPerQ: 20,
+      timer: null, remaining: 20,
+      running: false
+    };
+
+    // ====== Elements ======
+    const el = id => document.getElementById(id);
+    const start = el('start');
+    const quiz = el('quiz');
+    const result = el('result');
+    const review = el('review');
+
+    const qIndex = el('qIndex');
+    const qTotal = el('qTotal');
+    const qBadge = el('qBadge');
+    const qText = el('qText');
+    const opts = el('opts');
+    const bar = el('bar');
+
+    const score = el('score');
+    const correct = el('correct');
+    const wrong = el('wrong');
+    const skipped = el('skipped');
+
+    const time = el('time');
+
+    // ====== Helpers ======
+    const shuffleArray = (a) => a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+    const clamp = (n,min,max)=> Math.max(min, Math.min(max,n));
+
+    function saveBest(best){
+      const prev = Number(localStorage.getItem('aiquiz_best')||0);
+      const val = Math.max(prev, best);
+      localStorage.setItem('aiquiz_best', String(val));
+      el('best').textContent = val;
+    }
+    function readBest(){
+      const prev = Number(localStorage.getItem('aiquiz_best')||0);
+      el('best').textContent = prev;
+    }
+
+    function setTheme(){
+      // simple contrast toggler
+      const flag = localStorage.getItem('aiquiz_theme')||'dark';
+      if(flag==='light'){
+        document.documentElement.style.setProperty('--bg', '#f4f6fb');
+        document.documentElement.style.setProperty('--text', '#0b0f17');
+        document.documentElement.style.setProperty('--card', '#ffffff');
+      } else {
+        document.documentElement.style.setProperty('--bg', '#0b0f17');
+        document.documentElement.style.setProperty('--text', '#e5e7eb');
+        document.documentElement.style.setProperty('--card', '#111827');
+      }
+    }
+
+    function toggleTheme(){
+      const flag = localStorage.getItem('aiquiz_theme')||'dark';
+      localStorage.setItem('aiquiz_theme', flag==='dark'?'light':'dark');
+      setTheme();
+    }
+
+    function updateStartControls(){
+      el('countVal').textContent = el('count').value;
+      el('timePerQ').textContent = el('seconds').value;
+    }
+
+    // ====== Quiz Flow ======
+    function startQuiz(){
+      state.secondsPerQ = clamp(Number(el('seconds').value||20), 10, 60);
+      state.remaining = state.secondsPerQ;
+      const n = clamp(Number(el('count').value||10), 5, 20);
+      const base = Array.from({length: BANK.length}, (_,i)=>i);
+      const order = el('shuffle').checked ? shuffleArray(base) : base;
+      state.order = order.slice(0, n);
+      state.i = 0; state.picked = {}; state.correct = 0; state.wrong = 0; state.skipped = 0; state.running = true;
+
+      qTotal.textContent = String(n);
+      start.classList.add('hidden');
+      review.classList.add('hidden');
+      result.classList.add('hidden');
+      quiz.classList.remove('hidden');
+
+      drawQuestion();
+      tickStart();
+    }
+
+    function drawQuestion(){
+      const idx = state.order[state.i];
+      const item = BANK[idx];
+      const n = state.i + 1;
+      qIndex.textContent = String(n);
+      qBadge.textContent = 'Q' + n;
+      qText.textContent = item.q;
+
+      opts.innerHTML = '';
+      item.options.forEach((opt, j)=>{
+        const btn = document.createElement('button');
+        btn.className = 'opt';
+        btn.setAttribute('data-j', String(j));
+        btn.innerHTML = <span>${String.fromCharCode(65+j)}. ${opt}</span>;
+        btn.addEventListener('click', ()=> choose(j));
+        if(state.picked[state.i] !== undefined){
+          // review mode while navigating
+          const picked = state.picked[state.i];
+          btn.setAttribute('aria-selected', String(picked === j));
+          if(j === item.answer) btn.classList.add('correct');
+          if(picked === j && picked !== item.answer) btn.classList.add('wrong');
+        }
+        opts.appendChild(btn);
+      });
+
+      const progress = (n-1)/Number(qTotal.textContent)*100;
+      bar.style.width = progress + '%';
+      score.textContent = (state.correct*4 - state.wrong).toString(); // +4 / -1 scheme
+      correct.textContent = String(state.correct);
+      wrong.textContent = String(state.wrong);
+      skipped.textContent = String(state.skipped);
+      time.textContent = String(state.remaining);
+    }
+
+    function choose(j){
+      if(!state.running) return;
+      const idx = state.order[state.i];
+      const item = BANK[idx];
+      if(state.picked[state.i] !== undefined) return; // lock once chosen
+      state.picked[state.i] = j;
+      const isRight = j === item.answer;
+      if(isRight) state.correct++; else state.wrong++;
+
+      // show immediate feedback
+      const nodes = [...opts.querySelectorAll('.opt')];
+      nodes.forEach(n=>{
+        const k = Number(n.getAttribute('data-j'));
+        if(k === item.answer) n.classList.add('correct');
+        if(k === j && !isRight) n.classList.add('wrong');
+        n.setAttribute('aria-selected', String(k===j));
+      });
+    }
+
+    function skip(){
+      if(!state.running) return;
+      if(state.picked[state.i] === undefined) state.skipped++;
+      next();
+    }
+
+    function prev(){
+      state.i = Math.max(0, state.i-1);
+      state.remaining = state.secondsPerQ; // give fresh time on revisit
+      drawQuestion();
+    }
+
+    function next(){
+      const last = state.i >= state.order.length - 1;
+      if(last){
+        finish();
+      } else {
+        state.i++;
+        state.remaining = state.secondsPerQ;
+        drawQuestion();
+      }
+    }
+
+    function finish(){
+      state.running = false;
+      clearInterval(state.timer);
+      quiz.classList.add('hidden');
+      result.classList.remove('hidden');
+      const total = state.order.length;
+      const points = state.correct*4 - state.wrong; // +4 for correct, -1 for wrong, 0 for skipped
+      const msg = `You scored ${points} points. Correct: ${state.correct}, Wrong: ${state.wrong}, Skipped: ${state.skipped} out of ${total}.`;
+      el('summary').textContent = msg;
+      saveBest(points);
+      buildReview();
+    }
+
+    function buildReview(){
+      const list = el('reviewList');
+      list.innerHTML = '';
+      state.order.forEach((bankIdx, i)=>{
+        const item = BANK[bankIdx];
+        const chosen = state.picked[i];
+        const wrap = document.createElement('div');
+        wrap.className = 'opt';
+        wrap.style.flexDirection = 'column';
+        const status = chosen===undefined ? '<span class="pill">Skipped</span>' : chosen===item.answer ? '<span class="pill" style="color:var(--success)">Correct</span>' : '<span class="pill" style="color:var(--danger)">Wrong</span>';
+        wrap.innerHTML = `
+          <div class="qbox">
+            <div class="qno">${i+1}</div>
+            <div>
+              <div class="question">${item.q}</div>
+              <div class="small muted">Answer: <b>${['A','B','C','D'][item.answer]}. ${item.options[item.answer]}</b> ${item.explain?`• ${item.explain}`:''}</div>
+              <div class="small muted">Your choice: <b>${chosen===undefined?'-':['A','B','C','D'][chosen] + '. ' + item.options[chosen]}</b> ${status}
+            </div>
+          </div>`;
+        list.appendChild(wrap);
+      });
+    }
+
+    // Timer
+    function tickStart(){
+      clearInterval(state.timer);
+      state.remaining = state.secondsPerQ;
+      time.textContent = String(state.remaining);
+      state.timer = setInterval(()=>{
+        if(!state.running) return clearInterval(state.timer);
+        state.remaining--;
+        time.textContent = String(state.remaining);
+        if(state.remaining <= 0){
+          // time up → auto skip
+          if(state.picked[state.i] === undefined) state.skipped++;
+          const last = state.i >= state.order.length - 1;
+          if(last){ finish(); } else { state.i++; state.remaining = state.secondsPerQ; drawQuestion(); }
+        }
+      }, 1000);
+    }
+
+    function resetAll(){
+      clearInterval(state.timer);
+      state = { order:[], i:0, picked:{}, correct:0, wrong:0, skipped:0, secondsPerQ:20, timer:null, remaining:20, running:false };
+      start.classList.remove('hidden');
+      quiz.classList.add('hidden');
+      result.classList.add('hidden');
+      review.classList.add('hidden');
+      updateStartControls();
+      drawQuestion; // noop if not started
+    }
+
+    // ====== Events ======
+    el('btn-start').addEventListener('click', startQuiz);
+    el('btn-next').addEventListener('click', next);
+    el('btn-prev').addEventListener('click', prev);
+    el('btn-skip').addEventListener('click', skip);
+    el('btn-restart').addEventListener('click', resetAll);
+    el('btn-reset').addEventListener('click', resetAll);
+    el('btn-theme').addEventListener('click', toggleTheme);
+    el('btn-review').addEventListener('click', ()=>{ review.classList.remove('hidden'); window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'}); });
+    el('btn-close-review').addEventListener('click', ()=> review.classList.add('hidden'));
+
+    el('count').addEventListener('input', updateStartControls);
+    el('seconds').addEventListener('input', updateStartControls);
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e)=>{
+      if(quiz.classList.contains('hidden')) return;
+      if(['1','2','3','4'].includes(e.key)){
+        const j = Number(e.key) - 1; choose(j);
+      } else if(e.key.toLowerCase()==='n'){ next(); }
+      else if(e.key.toLowerCase()==='s'){ skip(); }
+      else if(e.key==='ArrowLeft'){ prev(); }
+      else if(e.key==='ArrowRight'){ next(); }
+    });
+
+    // Init
+    document.getElementById('year').textContent = new Date().getFullYear();
+    readBest();
+    setTheme();
+    updateStartControls();
+  </script></body>
+</html>
